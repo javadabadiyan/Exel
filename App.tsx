@@ -5,6 +5,7 @@ import { getSmartMappings } from './services/geminiService';
 import { ExcelData, ColumnMapping, Step } from './types';
 import PDFConverter from './components/PDFConverter';
 import ImageOCR from './components/ImageOCR';
+import SpeechToText from './components/SpeechToText';
 import { 
   CloudArrowUpIcon, 
   CheckCircleIcon, 
@@ -18,11 +19,12 @@ import {
   ShieldExclamationIcon,
   EyeIcon,
   ArrowRightIcon,
-  SparklesIcon
+  SparklesIcon,
+  SpeakerWaveIcon
 } from '@heroicons/react/24/outline';
 
 const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'excel' | 'pdf' | 'ocr'>('excel');
+  const [activeTab, setActiveTab] = useState<'excel' | 'pdf' | 'ocr' | 'speech'>('excel');
   const [step, setStep] = useState<Step>(Step.UPLOAD);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -132,6 +134,16 @@ const App: React.FC = () => {
             <PhotoIcon className="w-6 h-6" />
             <span className="font-bold text-sm">استخراج متن از عکس</span>
           </button>
+
+          <button 
+            onClick={() => setActiveTab('speech')}
+            className={`flex items-center gap-3 p-4 rounded-2xl transition-all ${
+              activeTab === 'speech' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100' : 'text-slate-500 hover:bg-slate-100'
+            }`}
+          >
+            <SpeakerWaveIcon className="w-6 h-6" />
+            <span className="font-bold text-sm">تبدیل صوت به متن</span>
+          </button>
         </nav>
 
         <div className="mt-auto p-8 text-center border-t border-slate-50">
@@ -153,6 +165,7 @@ const App: React.FC = () => {
             {activeTab === 'excel' && 'انتقال هوشمند داده‌های اکسل'}
             {activeTab === 'pdf' && 'تبدیل هوشمند فایل‌های PDF'}
             {activeTab === 'ocr' && 'استخراج هوشمند متن از تصویر'}
+            {activeTab === 'speech' && 'تبدیل هوشمند صوت به متن'}
           </h1>
           <div className="hidden sm:flex text-xs font-bold px-3 py-1 bg-indigo-50 text-indigo-600 rounded-full border border-indigo-100">
             نسخه پیشرفته هوشمند
@@ -162,6 +175,7 @@ const App: React.FC = () => {
         <main className="p-8">
           {activeTab === 'pdf' && <PDFConverter />}
           {activeTab === 'ocr' && <ImageOCR />}
+          {activeTab === 'speech' && <SpeechToText />}
           {activeTab === 'excel' && (
             <div className="max-w-6xl mx-auto">
               {/* Stepper logic */}
