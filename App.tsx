@@ -6,6 +6,7 @@ import { ExcelData, ColumnMapping, Step } from './types';
 import PDFConverter from './components/PDFConverter';
 import ImageOCR from './components/ImageOCR';
 import SpeechToText from './components/SpeechToText';
+import RubikaCollector from './components/RubikaCollector';
 import { 
   CloudArrowUpIcon, 
   CheckCircleIcon, 
@@ -20,11 +21,12 @@ import {
   EyeIcon,
   ArrowRightIcon,
   SparklesIcon,
-  SpeakerWaveIcon
+  SpeakerWaveIcon,
+  ChatBubbleBottomCenterIcon
 } from '@heroicons/react/24/outline';
 
 const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'excel' | 'pdf' | 'ocr' | 'speech'>('excel');
+  const [activeTab, setActiveTab] = useState<'excel' | 'pdf' | 'ocr' | 'speech' | 'rubika'>('excel');
   const [step, setStep] = useState<Step>(Step.UPLOAD);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -104,7 +106,7 @@ const App: React.FC = () => {
           <p className="text-xs text-slate-400 font-medium">مدیریت هوشمند مستندات فارسی</p>
         </div>
         
-        <nav className="p-4 flex flex-col gap-2">
+        <nav className="p-4 flex flex-col gap-2 overflow-y-auto">
           <button 
             onClick={() => { setActiveTab('excel'); setStep(Step.UPLOAD); }}
             className={`flex items-center gap-3 p-4 rounded-2xl transition-all ${
@@ -144,6 +146,16 @@ const App: React.FC = () => {
             <SpeakerWaveIcon className="w-6 h-6" />
             <span className="font-bold text-sm">تبدیل صوت به متن</span>
           </button>
+
+          <button 
+            onClick={() => setActiveTab('rubika')}
+            className={`flex items-center gap-3 p-4 rounded-2xl transition-all ${
+              activeTab === 'rubika' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100' : 'text-slate-500 hover:bg-slate-100'
+            }`}
+          >
+            <ChatBubbleBottomCenterIcon className="w-6 h-6" />
+            <span className="font-bold text-sm">استخراج داده‌های کانال</span>
+          </button>
         </nav>
 
         <div className="mt-auto p-8 text-center border-t border-slate-50">
@@ -166,6 +178,7 @@ const App: React.FC = () => {
             {activeTab === 'pdf' && 'تبدیل هوشمند فایل‌های PDF'}
             {activeTab === 'ocr' && 'استخراج هوشمند متن از تصویر'}
             {activeTab === 'speech' && 'تبدیل هوشمند صوت به متن'}
+            {activeTab === 'rubika' && 'جمع‌آوری هوشمند داده‌های کانال'}
           </h1>
           <div className="hidden sm:flex text-xs font-bold px-3 py-1 bg-indigo-50 text-indigo-600 rounded-full border border-indigo-100">
             نسخه پیشرفته هوشمند
@@ -176,6 +189,7 @@ const App: React.FC = () => {
           {activeTab === 'pdf' && <PDFConverter />}
           {activeTab === 'ocr' && <ImageOCR />}
           {activeTab === 'speech' && <SpeechToText />}
+          {activeTab === 'rubika' && <RubikaCollector />}
           {activeTab === 'excel' && (
             <div className="max-w-6xl mx-auto">
               {/* Stepper logic */}
