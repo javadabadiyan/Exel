@@ -31,17 +31,18 @@ export const readExcel = async (file: File): Promise<ExcelData> => {
   });
 };
 
-export const generateMappedExcel = (
+export const getMappedRows = (
   templateHeaders: string[],
   sourceData: ExcelData,
-  mappings: ColumnMapping[]
-): void => {
-  // Create a map for quick lookup: sourceHeaderName -> index in source rows
+  mappings: ColumnMapping[],
+  limit?: number
+): any[][] => {
   const sourceHeaderToIndex = new Map<string, number>();
   sourceData.headers.forEach((h, idx) => sourceHeaderToIndex.set(h, idx));
 
-  // Build the new rows based on template structure
-  const resultRows = sourceData.rows.map(sourceRow => {
+  const rowsToProcess = limit ? sourceData.rows.slice(0, limit) : sourceData.rows;
+
+  return rowsToProcess.map(sourceRow => {
     return templateHeaders.map(tHeader => {
       const mapping = mappings.find(m => m.templateHeader === tHeader);
       if (mapping && mapping.sourceHeader) {
@@ -51,15 +52,19 @@ export const generateMappedExcel = (
       return "";
     });
   });
+};
 
-  // Include headers at the top
+export const generateMappedExcel = (
+  templateHeaders: string[],
+  sourceData: ExcelData,
+  mappings: ColumnMapping[]
+): void => {
+  const resultRows = getMappedRows(templateHeaders, sourceData, mappings);
   const finalData = [templateHeaders, ...resultRows];
 
-  // Create workbook
   const worksheet = XLSX.utils.aoa_to_sheet(finalData);
   const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, "MappedData");
+  XLSX.utils.book_append_sheet(workbook, worksheet, "داده‌های نهایی");
 
-  // Export
-  XLSX.writeFile(workbook, "smart_mapped_excel.xlsx");
+  XLSX.writeFile(workbook, "Persian_Smart_Mapped_Data.xlsx");
 };

@@ -5,28 +5,29 @@ import { ColumnMapping } from "../types";
 export const getSmartMappings = async (templateHeaders: string[], sourceHeaders: string[]): Promise<ColumnMapping[]> => {
   const apiKey = process.env.API_KEY;
   if (!apiKey) {
-    throw new Error("کلید API یافت نشد. لطفاً در تنظیمات Vercel آن را اضافه کنید.");
+    throw new Error("کلید API یافت نشد. لطفاً در تنظیمات برنامه آن را اضافه کنید.");
   }
 
   const ai = new GoogleGenAI({ apiKey });
   
   const prompt = `
-    Task: Map column headers from a "Source" Excel file to a "Template" Excel file.
-    The headers are in Persian (Farsi).
+    وظیفه: تطبیق نام ستون‌های یک فایل اکسل "مبدأ" با یک فایل اکسل "نمونه" (Template).
+    تمام عناوین به زبان فارسی هستند. ممکن است نام‌ها دقیقاً یکی نباشند اما معنای یکسانی داشته باشند.
     
-    Template Headers: [${templateHeaders.join(', ')}]
-    Source Headers: [${sourceHeaders.join(', ')}]
+    عناوین فایل نمونه (مقصد): [${templateHeaders.join(', ')}]
+    عناوین فایل داده (مبدأ): [${sourceHeaders.join(', ')}]
     
-    Instructions:
-    1. Identify which Source Header best matches each Template Header based on semantic meaning.
-    2. If no clear match exists for a Template Header, map it to an empty string.
-    3. Return the mapping as a JSON array of objects.
-    4. Provide a confidence score (0 to 1) and a short reason for the match.
+    دستورالعمل:
+    1. برای هر عنوان در فایل "نمونه"، بهترین و نزدیک‌ترین معادل را در فایل "مبدأ" بر اساس معنای فارسی پیدا کن.
+    2. به تفاوت‌های املایی و مترادف‌ها توجه کن (مثلاً "کد ملی" و "شناسه ملی" یا "نام خانوادگی" و "شهرت").
+    3. اگر برای یک ستون نمونه، هیچ معادل مناسبی در فایل مبدأ وجود ندارد، آن را به رشته خالی "" مپ کن.
+    4. برای هر تطبیق، یک نمره اطمینان (بین 0 تا 1) و یک دلیل کوتاه به فارسی ارائه بده.
+    5. خروجی باید صرفاً یک آرایه JSON باشد.
   `;
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
+      model: 'gemini-3-pro-preview',
       contents: prompt,
       config: {
         responseMimeType: 'application/json',
@@ -51,8 +52,9 @@ export const getSmartMappings = async (templateHeaders: string[], sourceHeaders:
     console.error("AI Mapping failed:", error);
     return templateHeaders.map(th => ({
       templateHeader: th,
-      sourceHeader: sourceHeaders.find(sh => sh === th) || '',
-      confidence: sourceHeaders.includes(th) ? 1 : 0
+      sourceHeader: sourceHeaders.find(sh => sh.trim() === th.trim()) || '',
+      confidence: sourceHeaders.includes(th) ? 1 : 0,
+      reason: 'تطبیق مستقیم یا عدم یافتن معادل'
     }));
   }
 };
