@@ -1,10 +1,10 @@
 
 import React, { useState } from 'react';
-import { readExcel, generateMappedExcel } from './utils/excelHelper';
-import { getSmartMappings } from './services/geminiService';
-import { ExcelData, ColumnMapping, Step } from './types';
-import PDFConverter from './components/PDFConverter';
-import ImageOCR from './components/ImageOCR';
+import { readExcel, generateMappedExcel } from './utils/excelHelper.ts';
+import { getSmartMappings } from './services/geminiService.ts';
+import { ExcelData, ColumnMapping, Step } from './types.ts';
+import PDFConverter from './components/PDFConverter.tsx';
+import ImageOCR from './components/ImageOCR.tsx';
 import { 
   CloudArrowUpIcon, 
   CheckCircleIcon, 
@@ -72,7 +72,6 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col md:flex-row">
-      {/* Sidebar Navigation */}
       <aside className="w-full md:w-72 bg-white border-l border-slate-200 shadow-sm flex flex-col z-20">
         <div className="p-8 border-b border-slate-50">
           <div className="flex items-center gap-3 text-indigo-600 mb-2">
@@ -119,7 +118,6 @@ const App: React.FC = () => {
         </div>
       </aside>
 
-      {/* Main Content */}
       <div className="flex-grow flex flex-col">
         <header className="bg-white/80 backdrop-blur-md sticky top-0 z-10 border-b border-slate-100 px-8 py-6 flex justify-between items-center">
           <h1 className="text-2xl font-bold text-slate-800">
@@ -137,7 +135,6 @@ const App: React.FC = () => {
           {activeTab === 'ocr' && <ImageOCR />}
           {activeTab === 'excel' && (
             <div className="max-w-5xl mx-auto">
-              {/* Step Indicator */}
               <div className="flex justify-between mb-10 relative">
                 <div className="absolute top-1/2 left-0 w-full h-1 bg-slate-200 -z-10 -translate-y-1/2"></div>
                 {[
@@ -163,7 +160,6 @@ const App: React.FC = () => {
                 </div>
               )}
 
-              {/* Step 1: Upload */}
               {step === Step.UPLOAD && (
                 <div className="grid md:grid-cols-2 gap-8">
                   <UploadCard 
@@ -203,7 +199,6 @@ const App: React.FC = () => {
                 </div>
               )}
 
-              {/* Step 2: Mapping */}
               {step === Step.MAPPING && (
                 <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden animate-in fade-in slide-in-from-bottom-4">
                   <div className="p-8 border-b border-slate-50 bg-slate-50 flex justify-between items-center">
@@ -263,7 +258,6 @@ const App: React.FC = () => {
                 </div>
               )}
 
-              {/* Step 3: Download */}
               {step === Step.DOWNLOAD && (
                 <div className="max-w-2xl mx-auto bg-white p-16 rounded-3xl shadow-2xl border border-slate-100 text-center animate-in zoom-in-95 duration-300">
                   <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-8 shadow-inner">
@@ -272,7 +266,6 @@ const App: React.FC = () => {
                   <h2 className="text-3xl font-bold text-slate-800 mb-4">انتقال با موفقیت انجام شد!</h2>
                   <p className="text-slate-500 text-lg mb-10 leading-relaxed">
                     فایل جدید با چیدمان نمونه و داده‌های فایل مبدا تولید و دانلود شد. 
-                    شما می‌توانید فایل را برای تغییرات نهایی باز کنید.
                   </p>
                   <div className="flex flex-col gap-4">
                     <button onClick={downloadResult} className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-5 px-12 rounded-2xl shadow-xl transition-all flex items-center justify-center gap-3">
