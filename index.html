@@ -16,6 +16,10 @@
             display: none;
         }
     </style>
+<script>
+    // Shim for process.env to prevent crashes in browser environments like Vercel
+    window.process = { env: { API_KEY: "" } };
+</script>
 <script type="importmap">
 {
   "imports": {
@@ -34,5 +38,7 @@
 <body>
     <div id="root"></div>
     <canvas id="pdf-render-canvas" class="pdf-canvas"></canvas>
+    <!-- Explicitly load the entry point -->
+    <script type="module" src="index.tsx"></script>
 </body>
 </html>

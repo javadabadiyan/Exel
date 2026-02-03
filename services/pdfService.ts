@@ -2,7 +2,12 @@
 import { GoogleGenAI } from "@google/genai";
 
 export const extractPDFContent = async (base64Images: string[], targetFormat: 'word' | 'excel'): Promise<string> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const apiKey = process.env.API_KEY;
+  if (!apiKey) {
+    throw new Error("API Key is missing.");
+  }
+
+  const ai = new GoogleGenAI({ apiKey });
   
   const prompt = targetFormat === 'word' 
     ? "لطفا تمام متن موجود در این تصاویر را با دقت بالا استخراج کن. چیدمان پاراگراف‌ها را حفظ کن. اگر عکسی در صفحه است، آن را با عبارت [تصویر] مشخص کن. خروجی فقط متن فارسی باشد."

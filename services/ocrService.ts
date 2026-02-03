@@ -2,7 +2,12 @@
 import { GoogleGenAI } from "@google/genai";
 
 export const performPersianOCR = async (base64Image: string): Promise<string> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const apiKey = process.env.API_KEY;
+  if (!apiKey) {
+    throw new Error("API Key is missing. Please configure it in Vercel environment variables.");
+  }
+
+  const ai = new GoogleGenAI({ apiKey });
   
   const prompt = `
     وظیفه: استخراج متن (OCR) از تصویر ارسالی با دقت فوق‌العاده بالا.
@@ -25,12 +30,12 @@ export const performPersianOCR = async (base64Image: string): Promise<string> =>
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash-preview-01-2025',
+      model: 'gemini-3-flash-preview',
       contents: { parts: [part, { text: prompt }] },
     });
     return response.text || "متنی یافت نشد.";
   } catch (error) {
     console.error("OCR Error:", error);
-    throw new Error("خطا در پردازش تصویر. لطفاً از اتصال اینترنت و حجم فایل مطمئن شوید.");
+    throw new Error("خطا در پردازش تصویر. لطفاً از اتصال اینترنت و معتبر بودن کلید API مطمئن شوید.");
   }
 };
