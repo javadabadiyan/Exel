@@ -8,7 +8,8 @@ import {
   DocumentArrowDownIcon,
   ArrowPathIcon,
   SparklesIcon,
-  CheckIcon
+  CheckIcon,
+  ExclamationCircleIcon
 } from '@heroicons/react/24/outline';
 
 const ImageOCR: React.FC = () => {
@@ -16,6 +17,7 @@ const ImageOCR: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [extractedText, setExtractedText] = useState<string>("");
   const [copied, setCopied] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -24,6 +26,7 @@ const ImageOCR: React.FC = () => {
       reader.onloadend = () => {
         setImage(reader.result as string);
         setExtractedText("");
+        setError(null);
       };
       reader.readAsDataURL(file);
     }
@@ -32,11 +35,12 @@ const ImageOCR: React.FC = () => {
   const startOCR = async () => {
     if (!image) return;
     setLoading(true);
+    setError(null);
     try {
       const text = await performPersianOCR(image);
       setExtractedText(text);
-    } catch (err) {
-      alert("خطا در پردازش هوشمند تصویر.");
+    } catch (err: any) {
+      setError(err.message || "خطا در پردازش تصویر.");
     } finally {
       setLoading(false);
     }
@@ -54,6 +58,13 @@ const ImageOCR: React.FC = () => {
 
   return (
     <div className="max-w-6xl mx-auto p-4 animate-in fade-in duration-500">
+      {error && (
+        <div className="mb-6 bg-red-50 border border-red-200 text-red-600 p-4 rounded-2xl flex items-center gap-3">
+          <ExclamationCircleIcon className="w-6 h-6 shrink-0" />
+          <p className="text-sm font-bold">{error}</p>
+        </div>
+      )}
+      
       <div className="grid lg:grid-cols-2 gap-8">
         
         {/* Left Side: Upload & Preview */}

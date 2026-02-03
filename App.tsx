@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { readExcel, generateMappedExcel } from './utils/excelHelper.ts';
 import { getSmartMappings } from './services/geminiService.ts';
 import { ExcelData, ColumnMapping, Step } from './types.ts';
@@ -14,7 +14,8 @@ import {
   ExclamationTriangleIcon,
   DocumentDuplicateIcon,
   WrenchScrewdriverIcon,
-  PhotoIcon
+  PhotoIcon,
+  ShieldExclamationIcon
 } from '@heroicons/react/24/outline';
 
 const App: React.FC = () => {
@@ -22,6 +23,13 @@ const App: React.FC = () => {
   const [step, setStep] = useState<Step>(Step.UPLOAD);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [apiKeyMissing, setApiKeyMissing] = useState(false);
+
+  useEffect(() => {
+    if (!process.env.API_KEY || process.env.API_KEY === "undefined") {
+      setApiKeyMissing(true);
+    }
+  }, []);
 
   const [templateFile, setTemplateFile] = useState<ExcelData | null>(null);
   const [dataFile, setDataFile] = useState<ExcelData | null>(null);
@@ -50,8 +58,8 @@ const App: React.FC = () => {
       const smartMappings = await getSmartMappings(templateFile.headers, dataFile.headers);
       setMappings(smartMappings);
       setStep(Step.MAPPING);
-    } catch (err) {
-      setError("خطا در ارتباط با هوش مصنوعی. لطفا مجددا تلاش کنید.");
+    } catch (err: any) {
+      setError(`خطا در ارتباط با هوش مصنوعی: ${err.message || 'خطای ناشناخته'}`);
     } finally {
       setLoading(false);
     }
@@ -72,6 +80,7 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col md:flex-row">
+      {/* Sidebar */}
       <aside className="w-full md:w-72 bg-white border-l border-slate-200 shadow-sm flex flex-col z-20">
         <div className="p-8 border-b border-slate-50">
           <div className="flex items-center gap-3 text-indigo-600 mb-2">
@@ -118,7 +127,15 @@ const App: React.FC = () => {
         </div>
       </aside>
 
+      {/* Main Content */}
       <div className="flex-grow flex flex-col">
+        {apiKeyMissing && (
+          <div className="bg-amber-500 text-white px-8 py-3 flex items-center justify-center gap-3 animate-pulse">
+            <ShieldExclamationIcon className="w-5 h-5" />
+            <span className="text-sm font-bold">هشدار: کلید API ست نشده است. لطفاً در Vercel متغیر API_KEY را اضافه کنید.</span>
+          </div>
+        )}
+
         <header className="bg-white/80 backdrop-blur-md sticky top-0 z-10 border-b border-slate-100 px-8 py-6 flex justify-between items-center">
           <h1 className="text-2xl font-bold text-slate-800">
             {activeTab === 'excel' && 'مدیریت و انتقال هوشمند اکسل'}
@@ -135,6 +152,7 @@ const App: React.FC = () => {
           {activeTab === 'ocr' && <ImageOCR />}
           {activeTab === 'excel' && (
             <div className="max-w-5xl mx-auto">
+              {/* Stepper logic... */}
               <div className="flex justify-between mb-10 relative">
                 <div className="absolute top-1/2 left-0 w-full h-1 bg-slate-200 -z-10 -translate-y-1/2"></div>
                 {[
@@ -179,7 +197,7 @@ const App: React.FC = () => {
 
                   <div className="md:col-span-2 flex justify-center mt-6">
                     <button
-                      disabled={!templateFile || !dataFile || loading}
+                      disabled={!templateFile || !dataFile || loading || apiKeyMissing}
                       onClick={startAIAssistedMapping}
                       className="bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 text-white font-bold py-4 px-12 rounded-2xl shadow-xl transition-all flex items-center gap-3"
                     >

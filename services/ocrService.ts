@@ -3,8 +3,8 @@ import { GoogleGenAI } from "@google/genai";
 
 export const performPersianOCR = async (base64Image: string): Promise<string> => {
   const apiKey = process.env.API_KEY;
-  if (!apiKey) {
-    throw new Error("API Key is missing. Please configure it in Vercel environment variables.");
+  if (!apiKey || apiKey === "undefined") {
+    throw new Error("کلید API در تنظیمات برنامه یافت نشد.");
   }
 
   const ai = new GoogleGenAI({ apiKey });
@@ -33,9 +33,16 @@ export const performPersianOCR = async (base64Image: string): Promise<string> =>
       model: 'gemini-3-flash-preview',
       contents: { parts: [part, { text: prompt }] },
     });
-    return response.text || "متنی یافت نشد.";
-  } catch (error) {
-    console.error("OCR Error:", error);
-    throw new Error("خطا در پردازش تصویر. لطفاً از اتصال اینترنت و معتبر بودن کلید API مطمئن شوید.");
+    
+    if (!response.text) {
+      throw new Error("هوش مصنوعی پاسخی برنگرداند.");
+    }
+    
+    return response.text;
+  } catch (error: any) {
+    console.error("OCR API Error Details:", error);
+    // Surface the actual error message to help debugging
+    const errorMsg = error.message || "خطای ناشناخته در سرویس Gemini";
+    throw new Error(`خطای API: ${errorMsg}`);
   }
 };
