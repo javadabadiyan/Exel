@@ -82,8 +82,9 @@ const RubikaCollector: React.FC = () => {
   };
 
   const handleAdvancedKey = async () => {
-    if (window.aistudio) {
-      await window.aistudio.openSelectKey();
+    const aiStudio = (window as any).aistudio;
+    if (aiStudio) {
+      await aiStudio.openSelectKey();
       setError(null);
     }
   };

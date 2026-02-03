@@ -113,7 +113,8 @@ export const extractDataFromUrl = async (url: string, fields: string): Promise<a
       }
       if (msg.includes('entity was not found')) {
         // ریست کردن وضعیت کلید در صورت بروز خطای پروژه نامعتبر
-        if (window.aistudio) window.aistudio.openSelectKey();
+        const aiStudio = (window as any).aistudio;
+        if (aiStudio) aiStudio.openSelectKey();
         throw new Error("پروژه یافت نشد. لطفاً دوباره کلید API خود را انتخاب کنید.");
       }
       throw error;
