@@ -51,23 +51,23 @@ export const extractChannelData = async (rawText: string, fields: string): Promi
 };
 
 /**
- * استخراج داده مستقیماً از آدرس کانال با استفاده از ابزار جستجو
+ * استخراج داده مستقیماً از آدرس کانال با استفاده از ابزار جستجو و مدل Pro
  */
 export const extractDataFromUrl = async (url: string, fields: string): Promise<any[]> => {
   const apiKey = process.env.API_KEY;
-  if (!apiKey) throw new Error("API Key is missing");
+  if (!apiKey || apiKey === "undefined") throw new Error("کلید API یافت نشد.");
 
+  // استفاده از مدل Pro برای دقت بالاتر در جستجو
   const ai = new GoogleGenAI({ apiKey });
   
   const prompt = `
-    با استفاده از ابزار جستجو، به آدرس کانال روبیکا زیر مراجعه کن: ${url}
-    سپس آخرین پیام‌ها یا اطلاعات موجود در این آدرس را بررسی کرده و فیلدهای زیر را استخراج کن:
-    فیلدها: [${fields}]
-
-    نکات:
-    1. اگر آدرس مربوط به یک کانال عمومی است، پست‌های اخیر را بخوان.
-    2. اطلاعات را به صورت ساختاریافته (آرایه‌ای از اشیاء) برگردان.
-    3. فقط JSON نهایی را برگردان.
+    مراحل زیر را با دقت انجام بده:
+    1. با استفاده از ابزار جستجوی گوگل، محتوای عمومی آدرس روبیکا مقابل را پیمایش کن: ${url}
+    2. این آدرس مربوط به یک کانال ویترین یا فروشگاهی است. آخرین محصولات، پست‌ها یا پیام‌های منتشر شده در آن را پیدا کن.
+    3. اطلاعات یافت شده را با دقت تحلیل کرده و فیلدهای زیر را از میان آن‌ها استخراج کن:
+       فیلدهای درخواستی: [${fields}]
+    
+    نکته مهم: اگر قیمت یا شماره تماسی در پست‌ها وجود دارد، حتماً آن‌ها را استخراج کن. خروجی نهایی باید یک لیست (Array) از اشیاء باشد.
   `;
 
   try {
@@ -76,6 +76,7 @@ export const extractDataFromUrl = async (url: string, fields: string): Promise<a
       contents: prompt,
       config: {
         tools: [{ googleSearch: {} }],
+        thinkingConfig: { thinkingBudget: 4000 }, // اختصاص بودجه تفکر برای تحلیل بهتر نتایج جستجو
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.ARRAY,
@@ -90,9 +91,18 @@ export const extractDataFromUrl = async (url: string, fields: string): Promise<a
       }
     });
 
-    return JSON.parse(response.text || "[]");
+    const result = JSON.parse(response.text || "[]");
+    
+    if (result.length === 0) {
+      throw new Error("محتوایی یافت نشد. ممکن است کانال خصوصی باشد یا محتوای آن توسط جستجوگر ایندکس نشده باشد.");
+    }
+    
+    return result;
   } catch (error: any) {
-    console.error("URL Extraction Error:", error);
-    throw new Error("هوش مصنوعی نتوانست به محتوای آدرس دسترسی پیدا کند. لطفاً از عمومی بودن کانال مطمئن شوید یا متن را دستی کپی کنید.");
+    console.error("URL Extraction Detailed Error:", error);
+    if (error.message?.includes("not found") || error.message?.includes("access")) {
+      throw new Error("دسترسی به این کانال از طریق جستجوی هوشمند مقدور نبود. لطفاً محتوای کانال را کپی کرده و از لبه 'کپی متن' استفاده کنید.");
+    }
+    throw new Error(error.message || "خطا در پیمایش هوشمند آدرس کانال.");
   }
 };

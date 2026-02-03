@@ -14,7 +14,8 @@ import {
   ExclamationCircleIcon,
   CheckCircleIcon,
   GlobeAltIcon,
-  DocumentTextIcon
+  DocumentTextIcon,
+  InformationCircleIcon
 } from '@heroicons/react/24/outline';
 
 const RubikaCollector: React.FC = () => {
@@ -112,7 +113,7 @@ const RubikaCollector: React.FC = () => {
                   type="text"
                   value={fields}
                   onChange={(e) => setFields(e.target.value)}
-                  placeholder="نام، قیمت، موجودی..."
+                  placeholder="نام، قیمت، شماره تماس..."
                   className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
                 />
               </div>
@@ -131,7 +132,12 @@ const RubikaCollector: React.FC = () => {
                     />
                     <GlobeAltIcon className="w-6 h-6 text-slate-300 absolute left-4 top-1/2 -translate-y-1/2" />
                   </div>
-                  <p className="text-[10px] text-amber-600 mt-2 mr-1 font-bold">نکته: برای استخراج دقیق، کانال باید عمومی (Public) باشد.</p>
+                  <div className="mt-3 p-3 bg-amber-50 rounded-xl flex gap-2 items-start">
+                    <InformationCircleIcon className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                    <p className="text-[10px] text-amber-700 font-bold leading-relaxed">
+                      هوش مصنوعی از طریق جستجوی گوگل محتوای کانال را می‌خواند. اگر نتیجه‌ای حاصل نشد، ممکن است کانال توسط گوگل هنوز ایندکس نشده باشد.
+                    </p>
+                  </div>
                 </div>
               ) : (
                 <div className="animate-in slide-in-from-left duration-300">
@@ -157,14 +163,14 @@ const RubikaCollector: React.FC = () => {
               ) : (
                 <SparklesIcon className="w-6 h-6" />
               )}
-              <span>{mode === 'url' ? 'پیمایش و استخراج هوشمند' : 'استخراج از متن'}</span>
+              <span>{loading ? 'در حال تحلیل و استخراج...' : (mode === 'url' ? 'پیمایش و استخراج هوشمند' : 'استخراج از متن')}</span>
             </button>
           </div>
 
           {error && (
-            <div className="p-4 bg-red-50 text-red-600 rounded-2xl border border-red-100 flex items-center gap-3 text-sm font-bold animate-in fade-in">
-              <ExclamationCircleIcon className="w-5 h-5" />
-              {error}
+            <div className="p-5 bg-red-50 text-red-600 rounded-2xl border border-red-100 flex items-start gap-3 text-xs font-bold animate-in fade-in leading-relaxed">
+              <ExclamationCircleIcon className="w-5 h-5 shrink-0" />
+              <span>{error}</span>
             </div>
           )}
         </div>
@@ -194,11 +200,15 @@ const RubikaCollector: React.FC = () => {
 
             <div className="flex-grow overflow-hidden relative">
               {loading ? (
-                <div className="absolute inset-0 bg-white/60 backdrop-blur-sm z-10 flex flex-col items-center justify-center gap-4">
-                  <div className="w-12 h-12 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin"></div>
-                  <p className="font-bold text-slate-600">
-                    {mode === 'url' ? 'در حال جستجو و پیمایش محتوای کانال...' : 'در حال تحلیل متن...'}
-                  </p>
+                <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-10 flex flex-col items-center justify-center gap-6 text-center px-10">
+                  <div className="relative">
+                    <div className="w-16 h-16 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin"></div>
+                    <SparklesIcon className="w-6 h-6 text-amber-400 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                  </div>
+                  <div>
+                    <p className="font-black text-slate-700 text-lg">در حال تحلیل هوشمند</p>
+                    <p className="text-sm text-slate-500 mt-2">این فرآیند ممکن است تا ۳۰ ثانیه طول بکشد (در حال پیمایش وب)...</p>
+                  </div>
                 </div>
               ) : null}
 
@@ -238,7 +248,7 @@ const RubikaCollector: React.FC = () => {
             {success && (
               <div className="mt-6 p-4 bg-green-50 border border-green-100 rounded-2xl flex items-center justify-center gap-3 text-green-700 font-bold animate-in slide-in-from-bottom">
                 <CheckCircleIcon className="w-6 h-6" />
-                <span>{results.length} ردیف اطلاعات استخراج شد.</span>
+                <span>{results.length} ردیف اطلاعات با موفقیت استخراج شد.</span>
               </div>
             )}
           </div>
