@@ -16,7 +16,8 @@ import {
   GlobeAltIcon,
   DocumentTextIcon,
   InformationCircleIcon,
-  SignalIcon
+  SignalIcon,
+  KeyIcon
 } from '@heroicons/react/24/outline';
 
 const RubikaCollector: React.FC = () => {
@@ -76,6 +77,13 @@ const RubikaCollector: React.FC = () => {
       `ردیف ${idx + 1}:\n` + Object.entries(item).map(([k, v]) => `${k}: ${v}`).join('\n')
     ).join('\n\n---\n\n');
     saveAsWord(content, "گزارش_کانال");
+  };
+
+  const handleAdvancedKey = async () => {
+    if (window.aistudio) {
+      await window.aistudio.openSelectKey();
+      setError(null);
+    }
   };
 
   return (
@@ -165,12 +173,23 @@ const RubikaCollector: React.FC = () => {
             <div className="p-5 bg-red-50 text-red-600 rounded-2xl border border-red-100 flex flex-col gap-3 shadow-sm animate-in fade-in">
               <div className="flex items-center gap-2 font-black text-sm uppercase">
                 <ExclamationCircleIcon className="w-5 h-5 shrink-0" />
-                <span>خطای سیستمی</span>
+                <span>خطای سهمیه (Quota)</span>
               </div>
               <p className="text-xs leading-relaxed">{error}</p>
+              
+              {error.includes('سهمیه') && (
+                <button 
+                  onClick={handleAdvancedKey}
+                  className="flex items-center justify-center gap-2 p-3 bg-red-600 text-white rounded-xl text-[10px] font-bold mt-2"
+                >
+                  <KeyIcon className="w-4 h-4" />
+                  انتخاب کلید API معتبر
+                </button>
+              )}
+              
               <div className="flex items-center gap-2 bg-red-100/50 p-2 rounded-lg text-[10px]">
                 <SignalIcon className="w-4 h-4" />
-                <span>نکته: در صورت استفاده از اینترنت ایران، حتماً از فیلترشکن استفاده کنید.</span>
+                <span>نکته: مدل‌های Pro به محدودیت روزانه حساس هستند.</span>
               </div>
             </div>
           )}
@@ -206,7 +225,7 @@ const RubikaCollector: React.FC = () => {
                   </div>
                   <div>
                     <p className="font-black text-slate-700 text-lg">در حال تحلیل هوشمند</p>
-                    <p className="text-sm text-slate-500 mt-2">این فرآیند به دلیل پیمایش اینترنتی ممکن است کمی زمان ببرد...</p>
+                    <p className="text-sm text-slate-500 mt-2">این فرآیند به دلیل پیمایش اینترنتی مدل Pro ممکن است تا ۴۰ ثانیه زمان ببرد...</p>
                   </div>
                 </div>
               ) : null}

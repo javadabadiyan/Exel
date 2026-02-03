@@ -22,21 +22,49 @@ import {
   ArrowRightIcon,
   SparklesIcon,
   SpeakerWaveIcon,
-  ChatBubbleBottomCenterIcon
+  ChatBubbleBottomCenterIcon,
+  KeyIcon
 } from '@heroicons/react/24/outline';
+
+/**
+ * Define AIStudio interface to ensure global Window augmentation matches existing declarations
+ */
+interface AIStudio {
+  hasSelectedApiKey: () => Promise<boolean>;
+  openSelectKey: () => Promise<void>;
+}
+
+declare global {
+  interface Window {
+    aistudio: AIStudio;
+  }
+}
 
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'excel' | 'pdf' | 'ocr' | 'speech' | 'rubika'>('excel');
   const [step, setStep] = useState<Step>(Step.UPLOAD);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [apiKeyMissing, setApiKeyMissing] = useState(false);
+  const [hasAdvancedKey, setHasAdvancedKey] = useState(false);
 
   useEffect(() => {
-    if (!process.env.API_KEY || process.env.API_KEY === "undefined") {
-      setApiKeyMissing(true);
-    }
+    checkApiKey();
   }, []);
+
+  const checkApiKey = async () => {
+    if (window.aistudio) {
+      const selected = await window.aistudio.hasSelectedApiKey();
+      setHasAdvancedKey(selected);
+    }
+  };
+
+  const handleOpenKeySelector = async () => {
+    if (window.aistudio) {
+      await window.aistudio.openSelectKey();
+      setHasAdvancedKey(true);
+      setError(null);
+    }
+  };
 
   const [templateFile, setTemplateFile] = useState<ExcelData | null>(null);
   const [dataFile, setDataFile] = useState<ExcelData | null>(null);
@@ -158,20 +186,24 @@ const App: React.FC = () => {
           </button>
         </nav>
 
-        <div className="mt-auto p-8 text-center border-t border-slate-50">
-          <p className="text-[10px] text-slate-400">قدرت گرفته از Gemini 3 Pro</p>
+        <div className="mt-auto p-4 space-y-3">
+          {!hasAdvancedKey && (
+            <button 
+              onClick={handleOpenKeySelector}
+              className="w-full flex items-center justify-center gap-2 py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold shadow-md transition-all"
+            >
+              <KeyIcon className="w-4 h-4" />
+              فعالسازی نسخه پیشرفته
+            </button>
+          )}
+          <div className="text-center">
+            <p className="text-[10px] text-slate-400">قدرت گرفته از Gemini 3 Pro</p>
+          </div>
         </div>
       </aside>
 
       {/* Main Content */}
       <div className="flex-grow flex flex-col">
-        {apiKeyMissing && (
-          <div className="bg-amber-500 text-white px-8 py-3 flex items-center justify-center gap-3">
-            <ShieldExclamationIcon className="w-5 h-5" />
-            <span className="text-sm font-bold">هشدار: تنظیمات هوش مصنوعی ناقص است. لطفاً کلید API را بررسی کنید.</span>
-          </div>
-        )}
-
         <header className="bg-white/80 backdrop-blur-md sticky top-0 z-10 border-b border-slate-100 px-8 py-6 flex justify-between items-center">
           <h1 className="text-2xl font-bold text-slate-800">
             {activeTab === 'excel' && 'انتقال هوشمند داده‌های اکسل'}
@@ -180,8 +212,8 @@ const App: React.FC = () => {
             {activeTab === 'speech' && 'تبدیل هوشمند صوت به متن'}
             {activeTab === 'rubika' && 'جمع‌آوری هوشمند داده‌های کانال'}
           </h1>
-          <div className="hidden sm:flex text-xs font-bold px-3 py-1 bg-indigo-50 text-indigo-600 rounded-full border border-indigo-100">
-            نسخه پیشرفته هوشمند
+          <div className={`text-xs font-bold px-3 py-1 rounded-full border ${hasAdvancedKey ? 'bg-green-50 text-green-600 border-green-100' : 'bg-indigo-50 text-indigo-600 border-indigo-100'}`}>
+            {hasAdvancedKey ? 'نسخه حرفه‌ای فعال' : 'نسخه پیشرفته هوشمند'}
           </div>
         </header>
 
@@ -252,7 +284,7 @@ const App: React.FC = () => {
 
                   <div className="lg:col-span-2 flex justify-center mt-10">
                     <button
-                      disabled={!templateFile || !dataFile || loading || apiKeyMissing}
+                      disabled={!templateFile || !dataFile || loading}
                       onClick={startAIAssistedMapping}
                       className="bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 text-white font-bold py-5 px-16 rounded-2xl shadow-2xl transition-all flex items-center gap-4 group"
                     >
@@ -274,6 +306,7 @@ const App: React.FC = () => {
 
               {step === Step.MAPPING && (
                 <div className="bg-white rounded-[2rem] shadow-xl border border-slate-200 overflow-hidden animate-in fade-in slide-in-from-bottom-8 duration-500">
+                  {/* ... Rest of step UI remains same ... */}
                   <div className="p-8 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
                     <div>
                       <h2 className="text-xl font-bold text-slate-800">بررسی تطبیق‌های هوشمند</h2>

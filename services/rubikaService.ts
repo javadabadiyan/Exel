@@ -8,7 +8,7 @@ const fetchWithRetry = async (fn: () => Promise<any>, retries = 2, delay = 2000)
   try {
     return await fn();
   } catch (error: any) {
-    if (retries > 0 && (error.message?.includes('fetch') || error.name === 'TypeError')) {
+    if (retries > 0 && (error.message?.includes('fetch') || error.name === 'TypeError' || error.message?.includes('429'))) {
       await new Promise(resolve => setTimeout(resolve, delay));
       return fetchWithRetry(fn, retries - 1, delay * 2);
     }
@@ -56,31 +56,30 @@ export const extractChannelData = async (rawText: string, fields: string): Promi
 };
 
 /**
- * استخراج داده از URL با مدیریت خطای شبکه و جستجوی عمیق
+ * استخراج داده از URL با استفاده از مدل Pro Image و ابزار جستجو
  */
 export const extractDataFromUrl = async (url: string, fields: string): Promise<any[]> => {
+  // ایجاد نمونه جدید در هر بار فراخوانی برای اطمینان از کلید به‌روز
   const apiKey = process.env.API_KEY;
   if (!apiKey || apiKey === "undefined") throw new Error("کلید API یافت نشد.");
 
   const ai = new GoogleGenAI({ apiKey });
   
   const prompt = `
-    وظیفه فوری:
-    1. به آدرس روبیکا برو: ${url}
-    2. محتوای آخرین پست‌های این کانال را بررسی کن.
-    3. اطلاعات محصولات یا خدمات را بر اساس فیلدهای [${fields}] استخراج کن.
-    4. اگر قیمت یا توضیحی در پست‌ها هست، با دقت استخراج کن.
-    5. خروجی فقط یک آرایه JSON باشد.
+    لطفاً با استفاده از ابزار جستجو، محتوای عمومی آدرس زیر در پیام‌رسان روبیکا را بررسی کنید: ${url}
+    سپس تمام اطلاعات مربوط به محصولات، خدمات یا پیام‌ها را بر اساس فیلدهای درخواستی استخراج کنید.
+    فیلدها: [${fields}]
+    خروجی باید یک آرایه JSON معتبر باشد.
   `;
 
   return fetchWithRetry(async () => {
     try {
       const response = await ai.models.generateContent({
-        model: 'gemini-3-pro-preview',
+        model: 'gemini-3-pro-image-preview', // مدل بهینه‌تر برای Grounding
         contents: prompt,
         config: {
           tools: [{ googleSearch: {} }],
-          thinkingConfig: { thinkingBudget: 6000 },
+          thinkingConfig: { thinkingBudget: 8000 },
           responseMimeType: "application/json",
           responseSchema: {
             type: Type.ARRAY,
@@ -96,11 +95,11 @@ export const extractDataFromUrl = async (url: string, fields: string): Promise<a
       });
 
       const result = JSON.parse(response.text || "[]");
-      if (result.length === 0) throw new Error("محتوایی یافت نشد.");
+      if (result.length === 0) throw new Error("داده‌ای یافت نشد.");
       return result;
     } catch (error: any) {
-      if (error.message?.includes('Failed to fetch') || error.name === 'TypeError') {
-        throw new Error("خطای شبکه: امکان اتصال به سرورهای گوگل وجود ندارد. لطفاً فیلترشکن خود را بررسی کرده و صفحه را رفرش کنید.");
+      if (error.message?.includes('429') || error.message?.includes('Quota exceeded')) {
+        throw new Error("سهمیه استفاده رایگان شما از مدل Pro به پایان رسیده است. لطفاً برای ادامه، نسخه پیشرفته را از منوی سمت راست فعال کرده و یک API Key با اعتبار انتخاب کنید.");
       }
       throw error;
     }
