@@ -1,6 +1,9 @@
 
 import { GoogleGenAI } from "@google/genai";
 
+/**
+ * استخراج متن از چندین تصویر با پشتیبانی از دستورات اختصاصی
+ */
 export const performPersianOCR = async (base64Images: string[], customInstruction?: string): Promise<string> => {
   const apiKey = process.env.API_KEY;
   if (!apiKey || apiKey === "undefined") {
@@ -9,23 +12,23 @@ export const performPersianOCR = async (base64Images: string[], customInstructio
 
   const ai = new GoogleGenAI({ apiKey });
   
+  // دستورالعمل سیستمی برای هدایت مدل
   const systemPrompt = `
-    وظیفه: استخراج متن (OCR) و تحلیل تصاویر ارسالی با دقت فوق‌العاده بالا.
-    زبان هدف: فارسی (Persian).
+    شما یک متخصص OCR و استخراج متن هستید. وظیفه شما استخراج متن از تصاویر ارسالی با دقت بسیار بالا به زبان فارسی است.
     
-    دستورالعمل‌ها:
-    1. تمام متون را با حفظ ساختار و علائم نگارشی استخراج کن.
-    2. اگر کاربر دستور خاصی برای استخراج بخشی از متن داده است، دقیقاً همان را اولویت قرار بده.
-    3. اگر چندین تصویر وجود دارد، محتوای آن‌ها را به ترتیب و با جداکننده مشخص (مثلاً "--- تصویر شماره X ---") ارائه بده.
-    4. خروجی فقط شامل متن درخواستی باشد و هیچ توضیح اضافه‌ای نده.
+    قوانین:
+    1. تمام متون را با حفظ ساختار، پاراگراف‌بندی و علائم نگارشی استخراج کنید.
+    2. اگر چندین تصویر وجود دارد، محتوای آن‌ها را به ترتیب استخراج کرده و با جداکننده واضح (مانند "--- صفحه X ---") از هم جدا کنید.
+    3. به دستورات خاص کاربر که در ادامه می‌آید با اولویت بالا عمل کنید (مثلاً اگر کاربر خواست فقط بخش خاصی یا جدول خاصی استخراج شود).
+    4. خروجی فقط و فقط شامل متن استخراج شده باشد. از دادن توضیحات اضافی خودداری کنید.
   `;
 
-  const instructionPrompt = customInstruction 
-    ? `دستور اختصاصی کاربر: ${customInstruction}` 
-    : "تمام متن موجود در تصاویر را استخراج کن.";
+  const userPrompt = customInstruction 
+    ? `دستور خاص کاربر: ${customInstruction}\nلطفاً طبق این دستور، متن را از تصاویر زیر استخراج کن.` 
+    : "لطفاً تمام متن موجود در تصاویر زیر را با دقت استخراج کن.";
 
   const parts = [
-    { text: `${systemPrompt}\n\n${instructionPrompt}` },
+    { text: `${systemPrompt}\n\n${userPrompt}` },
     ...base64Images.map(img => ({
       inlineData: {
         mimeType: "image/jpeg",
@@ -41,13 +44,12 @@ export const performPersianOCR = async (base64Images: string[], customInstructio
     });
     
     if (!response.text) {
-      throw new Error("هوش مصنوعی پاسخی برنگرداند.");
+      throw new Error("هوش مصنوعی پاسخی تولید نکرد.");
     }
     
     return response.text;
   } catch (error: any) {
-    console.error("OCR API Error Details:", error);
-    const errorMsg = error.message || "خطای ناشناخته در سرویس Gemini";
-    throw new Error(`خطای API: ${errorMsg}`);
+    console.error("OCR API Error:", error);
+    throw new Error(`خطا در ارتباط با هوش مصنوعی: ${error.message || 'خطای ناشناخته'}`);
   }
 };
