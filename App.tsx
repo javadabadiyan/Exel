@@ -4,6 +4,7 @@ import { readExcel, generateMappedExcel } from './utils/excelHelper';
 import { getSmartMappings } from './services/geminiService';
 import { ExcelData, ColumnMapping, Step } from './types';
 import PDFConverter from './components/PDFConverter';
+import ImageOCR from './components/ImageOCR';
 import { 
   CloudArrowUpIcon, 
   CheckCircleIcon, 
@@ -12,11 +13,12 @@ import {
   DocumentArrowDownIcon,
   ExclamationTriangleIcon,
   DocumentDuplicateIcon,
-  WrenchScrewdriverIcon
+  WrenchScrewdriverIcon,
+  PhotoIcon
 } from '@heroicons/react/24/outline';
 
 const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'excel' | 'pdf'>('excel');
+  const [activeTab, setActiveTab] = useState<'excel' | 'pdf' | 'ocr'>('excel');
   const [step, setStep] = useState<Step>(Step.UPLOAD);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -71,7 +73,7 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col md:flex-row">
       {/* Sidebar Navigation */}
-      <aside className="w-full md:w-72 bg-white border-l border-slate-200 shadow-sm flex flex-col">
+      <aside className="w-full md:w-72 bg-white border-l border-slate-200 shadow-sm flex flex-col z-20">
         <div className="p-8 border-b border-slate-50">
           <div className="flex items-center gap-3 text-indigo-600 mb-2">
             <WrenchScrewdriverIcon className="w-8 h-8" />
@@ -88,7 +90,7 @@ const App: React.FC = () => {
             }`}
           >
             <TableCellsIcon className="w-6 h-6" />
-            <span className="font-bold">تطبیق اکسل</span>
+            <span className="font-bold text-sm">تطبیق اکسل</span>
           </button>
           
           <button 
@@ -98,12 +100,22 @@ const App: React.FC = () => {
             }`}
           >
             <DocumentDuplicateIcon className="w-6 h-6" />
-            <span className="font-bold">تبدیل PDF</span>
+            <span className="font-bold text-sm">تبدیل PDF</span>
+          </button>
+
+          <button 
+            onClick={() => setActiveTab('ocr')}
+            className={`flex items-center gap-3 p-4 rounded-2xl transition-all ${
+              activeTab === 'ocr' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100' : 'text-slate-500 hover:bg-slate-100'
+            }`}
+          >
+            <PhotoIcon className="w-6 h-6" />
+            <span className="font-bold text-sm">عکس به متن (OCR)</span>
           </button>
         </nav>
 
         <div className="mt-auto p-8 text-center border-t border-slate-50">
-          <p className="text-[10px] text-slate-400">قدرت گرفته از Gemini 3</p>
+          <p className="text-[10px] text-slate-400">قدرت گرفته از Gemini Pro</p>
         </div>
       </aside>
 
@@ -111,7 +123,9 @@ const App: React.FC = () => {
       <div className="flex-grow flex flex-col">
         <header className="bg-white/80 backdrop-blur-md sticky top-0 z-10 border-b border-slate-100 px-8 py-6 flex justify-between items-center">
           <h1 className="text-2xl font-bold text-slate-800">
-            {activeTab === 'excel' ? 'مدیریت و انتقال هوشمند اکسل' : 'تبدیل هوشمند فایل‌های PDF'}
+            {activeTab === 'excel' && 'مدیریت و انتقال هوشمند اکسل'}
+            {activeTab === 'pdf' && 'تبدیل هوشمند فایل‌های PDF'}
+            {activeTab === 'ocr' && 'استخراج هوشمند متن از تصویر'}
           </h1>
           <div className="text-xs font-bold px-3 py-1 bg-indigo-50 text-indigo-600 rounded-full border border-indigo-100">
             نسخه هوشمند PRO
@@ -119,9 +133,9 @@ const App: React.FC = () => {
         </header>
 
         <main className="p-8">
-          {activeTab === 'pdf' ? (
-            <PDFConverter />
-          ) : (
+          {activeTab === 'pdf' && <PDFConverter />}
+          {activeTab === 'ocr' && <ImageOCR />}
+          {activeTab === 'excel' && (
             <div className="max-w-5xl mx-auto">
               {/* Step Indicator */}
               <div className="flex justify-between mb-10 relative">

@@ -1,0 +1,36 @@
+
+import { GoogleGenAI } from "@google/genai";
+
+export const performPersianOCR = async (base64Image: string): Promise<string> => {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  
+  const prompt = `
+    وظیفه: استخراج متن (OCR) از تصویر ارسالی با دقت فوق‌العاده بالا.
+    زبان هدف: فارسی (Persian).
+    
+    دستورالعمل‌ها:
+    1. تمام کلمات، اعداد و علائم نگارشی را دقیقاً همان‌طور که هستند استخراج کن.
+    2. ساختار پاراگراف‌ها، لیست‌ها و سرفصل‌ها را حفظ کن.
+    3. اگر کلمات دست‌نویس هستند، با دقت تمام آن‌ها را بازخوانی کن.
+    4. هیچ توضیح اضافه‌ای نده، فقط متن استخراج شده را برگردان.
+    5. در صورت وجود جداول، سعی کن ساختار متنی آن‌ها را حفظ کنی.
+  `;
+
+  const part = {
+    inlineData: {
+      mimeType: "image/jpeg",
+      data: base64Image.split(',')[1] || base64Image
+    }
+  };
+
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash-preview-01-2025',
+      contents: { parts: [part, { text: prompt }] },
+    });
+    return response.text || "متنی یافت نشد.";
+  } catch (error) {
+    console.error("OCR Error:", error);
+    throw new Error("خطا در پردازش تصویر. لطفاً از اتصال اینترنت و حجم فایل مطمئن شوید.");
+  }
+};
