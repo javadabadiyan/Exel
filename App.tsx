@@ -152,6 +152,7 @@ const App: React.FC = () => {
           {activeTab === 'ocr' && <ImageOCR />}
           {activeTab === 'excel' && (
             <div className="max-w-5xl mx-auto">
+              {/* Stepper logic */}
               <div className="flex justify-between mb-10 relative">
                 <div className="absolute top-1/2 left-0 w-full h-1 bg-slate-200 -z-10 -translate-y-1/2"></div>
                 {[
