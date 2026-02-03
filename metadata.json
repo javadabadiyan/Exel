@@ -1,0 +1,5 @@
+{
+  "name": "Persian Excel Smart Mapper",
+  "description": "An intelligent AI-powered tool to map and migrate data between Persian Excel files using Gemini 3.",
+  "requestFramePermissions": []
+}
