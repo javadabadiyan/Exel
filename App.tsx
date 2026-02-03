@@ -26,20 +26,6 @@ import {
   KeyIcon
 } from '@heroicons/react/24/outline';
 
-/**
- * Define AIStudio interface to ensure global Window augmentation matches existing declarations
- */
-interface AIStudio {
-  hasSelectedApiKey: () => Promise<boolean>;
-  openSelectKey: () => Promise<void>;
-}
-
-declare global {
-  interface Window {
-    aistudio: AIStudio;
-  }
-}
-
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'excel' | 'pdf' | 'ocr' | 'speech' | 'rubika'>('excel');
   const [step, setStep] = useState<Step>(Step.UPLOAD);
@@ -51,16 +37,20 @@ const App: React.FC = () => {
     checkApiKey();
   }, []);
 
+  // Fix: Removed conflicting manual declaration of aistudio on window.
+  // Using casting to access environment-provided window.aistudio.
   const checkApiKey = async () => {
-    if (window.aistudio) {
-      const selected = await window.aistudio.hasSelectedApiKey();
+    const aiStudio = (window as any).aistudio;
+    if (aiStudio) {
+      const selected = await aiStudio.hasSelectedApiKey();
       setHasAdvancedKey(selected);
     }
   };
 
   const handleOpenKeySelector = async () => {
-    if (window.aistudio) {
-      await window.aistudio.openSelectKey();
+    const aiStudio = (window as any).aistudio;
+    if (aiStudio) {
+      await aiStudio.openSelectKey();
       setHasAdvancedKey(true);
       setError(null);
     }
@@ -306,7 +296,6 @@ const App: React.FC = () => {
 
               {step === Step.MAPPING && (
                 <div className="bg-white rounded-[2rem] shadow-xl border border-slate-200 overflow-hidden animate-in fade-in slide-in-from-bottom-8 duration-500">
-                  {/* ... Rest of step UI remains same ... */}
                   <div className="p-8 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
                     <div>
                       <h2 className="text-xl font-bold text-slate-800">بررسی تطبیق‌های هوشمند</h2>

@@ -17,7 +17,9 @@ import {
   DocumentTextIcon,
   InformationCircleIcon,
   SignalIcon,
-  KeyIcon
+  KeyIcon,
+  ShieldExclamationIcon,
+  WifiIcon
 } from '@heroicons/react/24/outline';
 
 const RubikaCollector: React.FC = () => {
@@ -86,10 +88,12 @@ const RubikaCollector: React.FC = () => {
     }
   };
 
+  const isNetworkError = error?.includes('اتصال') || error?.includes('fetch');
+  const isQuotaError = error?.includes('سهمیه') || error?.includes('Quota');
+
   return (
     <div className="max-w-7xl mx-auto p-4 animate-in fade-in duration-700">
       <div className="grid lg:grid-cols-12 gap-8">
-        {/* بخش ورودی */}
         <div className="lg:col-span-5 space-y-6">
           <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-200 p-8">
             <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-3">
@@ -116,7 +120,7 @@ const RubikaCollector: React.FC = () => {
 
             <div className="space-y-6">
               <div>
-                <label className="block text-sm font-bold text-slate-600 mb-2 mr-1">اطلاعات مورد نیاز</label>
+                <label className="block text-sm font-bold text-slate-600 mb-2 mr-1">اطلاعات مورد نیاز (با ، جدا کنید)</label>
                 <input 
                   type="text"
                   value={fields}
@@ -170,32 +174,40 @@ const RubikaCollector: React.FC = () => {
           </div>
 
           {error && (
-            <div className="p-5 bg-red-50 text-red-600 rounded-2xl border border-red-100 flex flex-col gap-3 shadow-sm animate-in fade-in">
-              <div className="flex items-center gap-2 font-black text-sm uppercase">
-                <ExclamationCircleIcon className="w-5 h-5 shrink-0" />
-                <span>خطای سهمیه (Quota)</span>
+            <div className={`p-6 rounded-[2rem] border flex flex-col gap-4 shadow-sm animate-in zoom-in-95 ${isNetworkError ? 'bg-amber-50 border-amber-200 text-amber-800' : 'bg-red-50 border-red-200 text-red-600'}`}>
+              <div className="flex items-center gap-3 font-black text-sm uppercase">
+                {isNetworkError ? <WifiIcon className="w-6 h-6 shrink-0" /> : <ShieldExclamationIcon className="w-6 h-6 shrink-0" />}
+                <span>{isNetworkError ? 'اختلال در اتصال شبکه' : isQuotaError ? 'خطای سهمیه (Quota)' : 'خطای سیستمی'}</span>
               </div>
-              <p className="text-xs leading-relaxed">{error}</p>
+              <p className="text-xs leading-relaxed font-medium">{error}</p>
               
-              {error.includes('سهمیه') && (
+              {isQuotaError && (
                 <button 
                   onClick={handleAdvancedKey}
-                  className="flex items-center justify-center gap-2 p-3 bg-red-600 text-white rounded-xl text-[10px] font-bold mt-2"
+                  className="flex items-center justify-center gap-2 p-3 bg-red-600 text-white rounded-xl text-[10px] font-bold mt-2 hover:bg-red-700 transition-colors"
                 >
                   <KeyIcon className="w-4 h-4" />
-                  انتخاب کلید API معتبر
+                  انتخاب کلید API جدید (پروژه Paid)
                 </button>
               )}
-              
-              <div className="flex items-center gap-2 bg-red-100/50 p-2 rounded-lg text-[10px]">
-                <SignalIcon className="w-4 h-4" />
-                <span>نکته: مدل‌های Pro به محدودیت روزانه حساس هستند.</span>
-              </div>
+
+              {isNetworkError && (
+                <div className="bg-amber-100/50 p-3 rounded-xl text-[10px] leading-relaxed">
+                  <div className="flex items-start gap-2 mb-2">
+                    <SignalIcon className="w-4 h-4 mt-0.5" />
+                    <span className="font-bold">راهکارهای پیشنهادی:</span>
+                  </div>
+                  <ul className="list-disc list-inside space-y-1 mr-4">
+                    <li>فیلترشکن خود را خاموش و روشن کنید یا لوکیشن آن را تغییر دهید.</li>
+                    <li>مطمئن شوید فیلترشکن شما ترافیک Google AI را مسدود نمی‌کند.</li>
+                    <li>در صورت امکان از DNSهایی مثل شکن یا ۴۰۳ استفاده کنید.</li>
+                  </ul>
+                </div>
+              )}
             </div>
           )}
         </div>
 
-        {/* بخش نتایج */}
         <div className="lg:col-span-7 space-y-6">
           <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-200 p-8 h-full flex flex-col min-h-[600px]">
             <div className="flex justify-between items-center mb-8">
@@ -224,8 +236,8 @@ const RubikaCollector: React.FC = () => {
                     <SparklesIcon className="w-6 h-6 text-amber-400 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
                   </div>
                   <div>
-                    <p className="font-black text-slate-700 text-lg">در حال تحلیل هوشمند</p>
-                    <p className="text-sm text-slate-500 mt-2">این فرآیند به دلیل پیمایش اینترنتی مدل Pro ممکن است تا ۴۰ ثانیه زمان ببرد...</p>
+                    <p className="font-black text-slate-700 text-lg">در حال استخراج هوشمند</p>
+                    <p className="text-sm text-slate-500 mt-2 italic">تحلیل زنده کانال روبیکا با مدل Pro ممکن است تا ۴۰ ثانیه زمان ببرد...</p>
                   </div>
                 </div>
               ) : null}
@@ -236,7 +248,7 @@ const RubikaCollector: React.FC = () => {
                     <thead className="sticky top-0 bg-indigo-600 text-white z-20">
                       <tr>
                         {Object.keys(results[0]).map((key, i) => (
-                          <th key={i} className="px-6 py-4 text-xs font-black uppercase">{key}</th>
+                          <th key={i} className="px-6 py-4 text-xs font-black uppercase tracking-widest">{key}</th>
                         ))}
                       </tr>
                     </thead>
@@ -262,7 +274,7 @@ const RubikaCollector: React.FC = () => {
             {success && (
               <div className="mt-6 p-4 bg-green-50 border border-green-100 rounded-2xl flex items-center justify-center gap-3 text-green-700 font-bold animate-in slide-in-from-bottom">
                 <CheckCircleIcon className="w-6 h-6" />
-                <span>{results.length} ردیف اطلاعات با موفقیت استخراج شد.</span>
+                <span>{results.length} ردیف اطلاعات با موفقیت شناسایی و استخراج شد.</span>
               </div>
             )}
           </div>
