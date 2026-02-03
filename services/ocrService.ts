@@ -1,7 +1,7 @@
 
 import { GoogleGenAI } from "@google/genai";
 
-export const performPersianOCR = async (base64Image: string): Promise<string> => {
+export const performPersianOCR = async (base64Images: string[], customInstruction?: string): Promise<string> => {
   const apiKey = process.env.API_KEY;
   if (!apiKey || apiKey === "undefined") {
     throw new Error("کلید API در تنظیمات برنامه یافت نشد.");
@@ -9,29 +9,35 @@ export const performPersianOCR = async (base64Image: string): Promise<string> =>
 
   const ai = new GoogleGenAI({ apiKey });
   
-  const prompt = `
-    وظیفه: استخراج متن (OCR) از تصویر ارسالی با دقت فوق‌العاده بالا.
+  const systemPrompt = `
+    وظیفه: استخراج متن (OCR) و تحلیل تصاویر ارسالی با دقت فوق‌العاده بالا.
     زبان هدف: فارسی (Persian).
     
     دستورالعمل‌ها:
-    1. تمام کلمات، اعداد و علائم نگارشی را دقیقاً همان‌طور که هستند استخراج کن.
-    2. ساختار پاراگراف‌ها، لیست‌ها و سرفصل‌ها را حفظ کن.
-    3. اگر کلمات دست‌نویس هستند، با دقت تمام آن‌ها را بازخوانی کن.
-    4. هیچ توضیح اضافه‌ای نده، فقط متن استخراج شده را برگردان.
-    5. در صورت وجود جداول، سعی کن ساختار متنی آن‌ها را حفظ کنی.
+    1. تمام متون را با حفظ ساختار و علائم نگارشی استخراج کن.
+    2. اگر کاربر دستور خاصی برای استخراج بخشی از متن داده است، دقیقاً همان را اولویت قرار بده.
+    3. اگر چندین تصویر وجود دارد، محتوای آن‌ها را به ترتیب و با جداکننده مشخص (مثلاً "--- تصویر شماره X ---") ارائه بده.
+    4. خروجی فقط شامل متن درخواستی باشد و هیچ توضیح اضافه‌ای نده.
   `;
 
-  const part = {
-    inlineData: {
-      mimeType: "image/jpeg",
-      data: base64Image.split(',')[1] || base64Image
-    }
-  };
+  const instructionPrompt = customInstruction 
+    ? `دستور اختصاصی کاربر: ${customInstruction}` 
+    : "تمام متن موجود در تصاویر را استخراج کن.";
+
+  const parts = [
+    { text: `${systemPrompt}\n\n${instructionPrompt}` },
+    ...base64Images.map(img => ({
+      inlineData: {
+        mimeType: "image/jpeg",
+        data: img.split(',')[1] || img
+      }
+    }))
+  ];
 
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
-      contents: { parts: [part, { text: prompt }] },
+      contents: { parts },
     });
     
     if (!response.text) {
@@ -41,7 +47,6 @@ export const performPersianOCR = async (base64Image: string): Promise<string> =>
     return response.text;
   } catch (error: any) {
     console.error("OCR API Error Details:", error);
-    // Surface the actual error message to help debugging
     const errorMsg = error.message || "خطای ناشناخته در سرویس Gemini";
     throw new Error(`خطای API: ${errorMsg}`);
   }
