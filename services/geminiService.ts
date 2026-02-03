@@ -3,7 +3,12 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { ColumnMapping } from "../types";
 
 export const getSmartMappings = async (templateHeaders: string[], sourceHeaders: string[]): Promise<ColumnMapping[]> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const apiKey = process.env.API_KEY;
+  if (!apiKey) {
+    throw new Error("کلید API یافت نشد. لطفاً در تنظیمات Vercel آن را اضافه کنید.");
+  }
+
+  const ai = new GoogleGenAI({ apiKey });
   
   const prompt = `
     Task: Map column headers from a "Source" Excel file to a "Template" Excel file.
@@ -44,7 +49,6 @@ export const getSmartMappings = async (templateHeaders: string[], sourceHeaders:
     return JSON.parse(response.text || '[]');
   } catch (error) {
     console.error("AI Mapping failed:", error);
-    // Fallback: simple exact match or empty
     return templateHeaders.map(th => ({
       templateHeader: th,
       sourceHeader: sourceHeaders.find(sh => sh === th) || '',

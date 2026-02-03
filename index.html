@@ -16,6 +16,16 @@
         }
         #root { min-height: 100vh; }
         .pdf-canvas { display: none; }
+        /* Loading state for blank screen prevention */
+        #root:empty::before {
+            content: "در حال بارگذاری ابزار هوشمند...";
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            color: #6366f1;
+            font-weight: bold;
+        }
     </style>
 <script type="importmap">
 {
@@ -26,10 +36,10 @@
     "@google/genai": "https://esm.sh/@google/genai@^1.39.0",
     "xlsx": "https://esm.sh/xlsx@^0.18.5",
     "@heroicons/react/": "https://esm.sh/@heroicons/react@^2.2.0/",
-    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.3",
-    "vite": "https://esm.sh/vite@^7.3.1",
+    "docx": "https://esm.sh/docx@^9.5.1",
     "pdfjs-dist": "https://esm.sh/pdfjs-dist@^5.4.624",
-    "docx": "https://esm.sh/docx@^9.5.1"
+    "vite": "https://esm.sh/vite@^7.3.1",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.3"
   }
 }
 </script>
