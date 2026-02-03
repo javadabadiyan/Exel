@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { performPersianOCR } from '../services/ocrService';
 import { saveAsWord } from '../utils/wordHelper';
 import * as XLSX from 'xlsx';
@@ -15,7 +14,8 @@ import {
   TableCellsIcon,
   ChatBubbleBottomCenterTextIcon,
   DocumentTextIcon,
-  SignalIcon
+  SignalIcon,
+  TrashIcon
 } from '@heroicons/react/24/outline';
 
 interface ImageFile {
@@ -28,61 +28,82 @@ interface ImageFile {
 const ImageOCR: React.FC = () => {
   const [images, setImages] = useState<ImageFile[]>([]);
   const [loading, setLoading] = useState(false);
+  const [processingImages, setProcessingImages] = useState(false);
   const [extractedText, setExtractedText] = useState<string>("");
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [instruction, setInstruction] = useState<string>("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (files) {
-      const fileList = Array.from(files) as File[];
-      fileList.forEach(file => {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          // فشرده‌سازی اولیه با استفاده از یک ترفند ساده (محدود کردن سایز در آینده اگر نیاز بود)
-          const img = new Image();
-          img.src = reader.result as string;
-          img.onload = () => {
-            const canvas = document.createElement('canvas');
-            let width = img.width;
-            let height = img.height;
-            // محدود کردن حداکثر ابعاد برای جلوگیری از خطای سایز در Fetch
-            const MAX_SIZE = 1600;
-            if (width > height) {
-              if (width > MAX_SIZE) {
-                height *= MAX_SIZE / width;
-                width = MAX_SIZE;
-              }
-            } else {
-              if (height > MAX_SIZE) {
-                width *= MAX_SIZE / height;
-                height = MAX_SIZE;
-              }
+  const processFile = (file: File): Promise<ImageFile> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const img = new Image();
+        img.src = reader.result as string;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          const MAX_SIZE = 1600;
+          if (width > height) {
+            if (width > MAX_SIZE) {
+              height *= MAX_SIZE / width;
+              width = MAX_SIZE;
             }
-            canvas.width = width;
-            canvas.height = height;
-            const ctx = canvas.getContext('2d');
-            ctx?.drawImage(img, 0, 0, width, height);
-            const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7); // فشرده‌سازی با کیفیت ۷۰٪
+          } else {
+            if (height > MAX_SIZE) {
+              width *= MAX_SIZE / height;
+              height = MAX_SIZE;
+            }
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.8);
 
-            const newImage: ImageFile = {
-              id: Math.random().toString(36).substr(2, 9),
-              preview: compressedBase64,
-              base64: compressedBase64,
-              name: file.name
-            };
-            setImages(prev => [...prev, newImage]);
-          };
+          resolve({
+            id: Math.random().toString(36).substr(2, 9),
+            preview: compressedBase64,
+            base64: compressedBase64,
+            name: file.name
+          });
         };
-        reader.readAsDataURL(file);
-      });
+        img.onerror = () => reject(new Error(`خطا در بارگذاری تصویر: ${file.name}`));
+      };
+      reader.onerror = () => reject(new Error(`خطا در خواندن فایل: ${file.name}`));
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      setProcessingImages(true);
       setError(null);
+      try {
+        // Fix: Explicitly cast Array.from(files) to File[] to resolve "unknown" type error in map
+        const fileList = Array.from(files) as File[];
+        const processedImages = await Promise.all(fileList.map(file => processFile(file)));
+        setImages(prev => [...prev, ...processedImages]);
+      } catch (err: any) {
+        setError(err.message || "خطا در آماده‌سازی تصاویر.");
+      } finally {
+        setProcessingImages(false);
+        if (fileInputRef.current) fileInputRef.current.value = "";
+      }
     }
   };
 
   const removeImage = (id: string) => {
     setImages(prev => prev.filter(img => img.id !== id));
+  };
+
+  const clearAllImages = () => {
+    setImages([]);
+    setExtractedText("");
+    setError(null);
   };
 
   const startOCR = async () => {
@@ -123,12 +144,12 @@ const ImageOCR: React.FC = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto p-4 md:p-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div className="max-w-7xl mx-auto p-4 md:p-8 animate-in fade-in duration-700">
       {error && (
         <div className="mb-6 bg-red-50 border border-red-200 text-red-600 p-6 rounded-3xl flex flex-col gap-3 shadow-md">
           <div className="flex items-center gap-3">
             <ExclamationCircleIcon className="w-8 h-8 shrink-0 text-red-500" />
-            <h3 className="font-black text-lg">خطا در برقراری ارتباط!</h3>
+            <h3 className="font-black text-lg">خطا در فرآیند!</h3>
           </div>
           <p className="text-sm leading-relaxed mr-11">{error}</p>
           <div className="flex items-center gap-2 mr-11 mt-1 text-[11px] font-bold text-red-400 bg-red-100/50 py-2 px-4 rounded-xl w-fit">
@@ -149,58 +170,84 @@ const ImageOCR: React.FC = () => {
             <div className="mb-8">
               <label className="flex items-center gap-2 text-sm font-bold text-slate-600 mb-3 mr-1">
                 <ChatBubbleBottomCenterTextIcon className="w-5 h-5 text-amber-500" />
-                دستور اختصاصی (اختیاری)
+                دستور اختصاصی استخراج (اختیاری)
               </label>
               <textarea
                 value={instruction}
                 onChange={(e) => setInstruction(e.target.value)}
-                placeholder="مثلاً: فقط جدول را بکش، یا فقط مبالغ را استخراج کن..."
-                className="w-full p-5 bg-slate-50 border border-slate-200 rounded-3xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none min-h-[120px] resize-none transition-all"
+                placeholder="مثلاً: فقط جدول را استخراج کن، یا فقط اسامی پرسنل را بنویس..."
+                className="w-full p-5 bg-slate-50 border border-slate-200 rounded-3xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none min-h-[100px] resize-none transition-all"
               />
             </div>
 
             <label className={`block border-3 border-dashed rounded-[2.5rem] p-10 text-center cursor-pointer transition-all ${
               images.length > 0 ? 'bg-indigo-50/40 border-indigo-200' : 'bg-slate-50 border-slate-200 hover:border-indigo-400'
             }`}>
-              <input type="file" className="hidden" accept="image/*" multiple onChange={handleImageUpload} />
+              <input 
+                type="file" 
+                ref={fileInputRef}
+                className="hidden" 
+                accept="image/*" 
+                multiple 
+                onChange={handleImageUpload} 
+              />
               <div className="flex flex-col items-center">
                 <div className="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center mb-4">
-                  <PhotoIcon className="w-10 h-10 text-slate-300" />
+                  {processingImages ? (
+                    <ArrowPathIcon className="w-10 h-10 text-indigo-500 animate-spin" />
+                  ) : (
+                    <PhotoIcon className="w-10 h-10 text-slate-300" />
+                  )}
                 </div>
-                <p className="text-slate-600 font-bold">انتخاب یا کشیدن تصاویر</p>
+                <p className="text-slate-600 font-bold">
+                  {processingImages ? "در حال آماده‌سازی تصاویر..." : "انتخاب تصاویر (تکی یا دسته‌جمعی)"}
+                </p>
+                <p className="text-[10px] text-slate-400 mt-2">JPG, PNG, WEBP SUPPORTED</p>
               </div>
             </label>
 
             {images.length > 0 && (
-              <div className="mt-8 grid grid-cols-4 gap-3">
-                {images.map(img => (
-                  <div key={img.id} className="relative group aspect-square rounded-2xl overflow-hidden border border-slate-200 shadow-sm bg-slate-100">
-                    <img src={img.preview} alt="Preview" className="w-full h-full object-cover transition-transform group-hover:scale-110" />
-                    <button 
-                      onClick={() => removeImage(img.id)}
-                      className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      <XMarkIcon className="w-6 h-6 text-white" />
-                    </button>
-                  </div>
-                ))}
+              <div className="mt-8">
+                <div className="flex justify-between items-center mb-4 px-2">
+                  <span className="text-xs font-bold text-slate-500">{images.length} تصویر انتخاب شده</span>
+                  <button 
+                    onClick={clearAllImages}
+                    className="flex items-center gap-1 text-[10px] font-bold text-red-500 hover:bg-red-50 px-3 py-1.5 rounded-lg transition-all"
+                  >
+                    <TrashIcon className="w-3.5 h-3.5" />
+                    حذف همه
+                  </button>
+                </div>
+                <div className="grid grid-cols-4 gap-3">
+                  {images.map(img => (
+                    <div key={img.id} className="relative group aspect-square rounded-2xl overflow-hidden border border-slate-200 shadow-sm bg-slate-100">
+                      <img src={img.preview} alt="Preview" className="w-full h-full object-cover transition-transform group-hover:scale-110" />
+                      <button 
+                        onClick={() => removeImage(img.id)}
+                        className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <XMarkIcon className="w-6 h-6 text-white" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 
             <button
-              disabled={images.length === 0 || loading}
+              disabled={images.length === 0 || loading || processingImages}
               onClick={startOCR}
               className="w-full mt-8 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 text-white font-bold py-5 rounded-[1.5rem] shadow-xl transition-all flex items-center justify-center gap-3 group"
             >
               {loading ? (
                 <>
                   <ArrowPathIcon className="w-6 h-6 animate-spin" />
-                  <span>در حال استخراج...</span>
+                  <span>در حال استخراج هوشمند...</span>
                 </>
               ) : (
                 <>
                   <SparklesIcon className="w-6 h-6 group-hover:rotate-12 transition-transform" />
-                  <span>شروع استخراج هوشمند</span>
+                  <span>شروع استخراج متن</span>
                 </>
               )}
             </button>
@@ -236,7 +283,7 @@ const ImageOCR: React.FC = () => {
                   <div className="w-20 h-20 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin"></div>
                   <div className="text-center">
                     <p className="text-lg font-bold text-slate-700">هوش مصنوعی در حال تحلیل است...</p>
-                    <p className="text-sm text-slate-400 mt-2 italic">لطفاً صبور باشید (ارسال تصاویر به سرورهای گوگل)</p>
+                    <p className="text-sm text-slate-400 mt-2 italic">پردازش متون فارسی با دقت بالا</p>
                   </div>
                 </div>
               ) : extractedText ? (
@@ -249,7 +296,9 @@ const ImageOCR: React.FC = () => {
               ) : (
                 <div className="h-full min-h-[450px] flex flex-col items-center justify-center border-2 border-dashed border-slate-100 rounded-[2rem] text-slate-300 bg-slate-50/40">
                   <SparklesIcon className="w-16 h-16 mb-4 text-slate-100" />
-                  <p className="font-bold text-slate-400">نتیجه استخراج اینجا نمایش داده می‌شود</p>
+                  <p className="font-bold text-slate-400 text-center">
+                    {images.length > 0 ? "آماده استخراج! دکمه بنفش را بزنید" : "تصاویر را انتخاب کنید تا متن اینجا ظاهر شود"}
+                  </p>
                 </div>
               )}
             </div>
