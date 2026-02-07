@@ -22,3 +22,5 @@ export enum Step {
   PREVIEW = 'PREVIEW',
   DOWNLOAD = 'DOWNLOAD'
 }
+
+export type ActiveTab = 'excel' | 'pdf' | 'ocr' | 'speech' | 'rubika' | 'remote';

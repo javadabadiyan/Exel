@@ -2,11 +2,12 @@
 import React, { useState, useEffect } from 'react';
 import { readExcel, generateMappedExcel, getMappedRows } from './utils/excelHelper';
 import { getSmartMappings } from './services/geminiService';
-import { ExcelData, ColumnMapping, Step } from './types';
+import { ExcelData, ColumnMapping, Step, ActiveTab } from './types';
 import PDFConverter from './components/PDFConverter';
 import ImageOCR from './components/ImageOCR';
 import SpeechToText from './components/SpeechToText';
 import RubikaCollector from './components/RubikaCollector';
+import RemoteBridge from './components/RemoteBridge';
 import { 
   CloudArrowUpIcon, 
   CheckCircleIcon, 
@@ -23,11 +24,13 @@ import {
   SparklesIcon,
   SpeakerWaveIcon,
   ChatBubbleBottomCenterIcon,
-  KeyIcon
+  KeyIcon,
+  CommandLineIcon,
+  ComputerDesktopIcon
 } from '@heroicons/react/24/outline';
 
 const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'excel' | 'pdf' | 'ocr' | 'speech' | 'rubika'>('excel');
+  const [activeTab, setActiveTab] = useState<ActiveTab>('excel');
   const [step, setStep] = useState<Step>(Step.UPLOAD);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -37,8 +40,6 @@ const App: React.FC = () => {
     checkApiKey();
   }, []);
 
-  // Fix: Removed conflicting manual declaration of aistudio on window.
-  // Using casting to access environment-provided window.aistudio.
   const checkApiKey = async () => {
     const aiStudio = (window as any).aistudio;
     if (aiStudio) {
@@ -174,6 +175,18 @@ const App: React.FC = () => {
             <ChatBubbleBottomCenterIcon className="w-6 h-6" />
             <span className="font-bold text-sm">استخراج داده‌های کانال</span>
           </button>
+
+          <div className="h-px bg-slate-100 my-2"></div>
+
+          <button 
+            onClick={() => setActiveTab('remote')}
+            className={`flex items-center gap-3 p-4 rounded-2xl transition-all ${
+              activeTab === 'remote' ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-500 hover:bg-slate-100'
+            }`}
+          >
+            <ComputerDesktopIcon className="w-6 h-6" />
+            <span className="font-bold text-sm">پل ریموت (شرکت-خونه)</span>
+          </button>
         </nav>
 
         <div className="mt-auto p-4 space-y-3">
@@ -201,6 +214,7 @@ const App: React.FC = () => {
             {activeTab === 'ocr' && 'استخراج هوشمند متن از تصویر'}
             {activeTab === 'speech' && 'تبدیل هوشمند صوت به متن'}
             {activeTab === 'rubika' && 'جمع‌آوری هوشمند داده‌های کانال'}
+            {activeTab === 'remote' && 'راه‌اندازی پل ارتباطی ریموت'}
           </h1>
           <div className={`text-xs font-bold px-3 py-1 rounded-full border ${hasAdvancedKey ? 'bg-green-50 text-green-600 border-green-100' : 'bg-indigo-50 text-indigo-600 border-indigo-100'}`}>
             {hasAdvancedKey ? 'نسخه حرفه‌ای فعال' : 'نسخه پیشرفته هوشمند'}
@@ -212,6 +226,7 @@ const App: React.FC = () => {
           {activeTab === 'ocr' && <ImageOCR />}
           {activeTab === 'speech' && <SpeechToText />}
           {activeTab === 'rubika' && <RubikaCollector />}
+          {activeTab === 'remote' && <RemoteBridge />}
           {activeTab === 'excel' && (
             <div className="max-w-6xl mx-auto">
               {/* Stepper logic */}
